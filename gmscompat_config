@@ -41,6 +41,28 @@ MdnsConfigs__use_connectivity_manager_for_wifi_monitor_if_possible false
 # See https://discuss.grapheneos.org/d/1263-notification-says-google-play-services-needs-to-show-a-screen
 ReceiverControlChannelFeatures__enable_user_accept_dialogs false
 
+[com.google.android.ims.library]
+# RCS carrier config flags. On stock, Google pushes these via Phenotype server-side.
+# Without them, Messages has no ACS URL and RCS provisioning fails ("No config URL").
+# Values captured from stock Pixel 9a on AT&T (310280).
+# Force amber off so Messages reads these Phenotype flags instead of empty MobileConfiguration.
+# Google pushes amber_create_flags=true server-side, which would bypass our overrides.
+RcsProvisioning__amber_create_flags false
+RcsProvisioning__disable_rcs_for_device false
+RcsFlags__acs_url set-string http://rcs-acs-att-us.jibe.google.com
+RcsFlags__rcs_provisioning_enabled true
+RcsFlags__mcc_mnc set-string 310280
+RcsFlags__provisioning_rcs_profile set-string UP_T
+RcsFlags__provisioning_rcs_version set-string 5.1B
+RcsFlags__provisioning_imsi_format set-int 3
+RcsFlags__provisioning_imei_format set-int 3
+RcsFlags__allow_manual_phone_number_input true
+RcsFlags__show_google_tos true
+RcsFlags__enable_instance_id_in_provisioning true
+RcsFlags__notify_backend_rcs_is_unavailable true
+RcsFlags__otp_pattern set-string Your\\sMessenger\\sverification\\scode\\sis\\sG-(\\d{6})|Your\\sMessages\\sby\\sGoogle\\sverification\\scode\\sis\\sG-(\\d{6})
+RcsFlags__otp_wait_timeout_ms set-int 10000
+
 [com.google.android.gms.people]
 # controls access to ContactsContract$SimContacts#getSimAccounts()
 AccountCategoriesFeature__use_cp2_sim_account_settings perms-none-of android.permission.READ_CONTACTS false
@@ -218,29 +240,24 @@ getUserSelectedOutgoingPhoneAccount null
 placeCall void
 
 [android.telephony.SubscriptionManager]
-getActiveSubscriptionIdList emptyIntArray
-getPhoneNumber emptyString
+# getActiveSubscriptionIdList, getPhoneNumber stubs removed:
+# with READ_PHONE_STATE and READ_PHONE_NUMBERS granted, the real APIs work.
+# These are needed for RCS provisioning (phone number verification).
 
 [android.telephony.TelephonyManager]
-getDeviceId nullString
-getImei nullString
-getMeid nullString
-# 0 is NETWORK_TYPE_UNKNOWN
-getDataNetworkType int 0
-getNetworkType int 0
-getVoiceNetworkType int 0
+# getDeviceId, getImei, getMeid, getSubscriberId, getLine1Number stubs removed:
+# with READ_DEVICE_IDENTIFIERS appop set for GMS Core, the real APIs work.
+# getServiceState, getDataNetworkType, getNetworkType, getVoiceNetworkType stubs removed:
+# with READ_PHONE_STATE granted, the real APIs work. Needed for IMS/RCS registration.
 # 0 is CALL_STATE_IDLE
 getCallState int 0
 getCallStateForSubscription int 0
 getSimSerialNumber nullString
 getUiccSlotsInfo nullArray
-getSubscriberId nullString
-getLine1Number nullString
 getAllCellInfo emptyList
 isIccLockEnabled false
 getGroupIdLevel1 nullString
 unregisterTelephonyCallback void
-getServiceState null
 getVoiceMailNumber nullString
 
 [com.android.internal.gmscompat.sysservice.GmcPackageManager]
