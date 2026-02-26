@@ -1,7 +1,11 @@
 package app.grapheneos.gmscompat;
 
+import android.accounts.Account;
+import android.accounts.AccountManager;
+import android.accounts.OnAccountsUpdateListener;
 import android.app.Application;
 import android.app.NotificationManager;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SharedPreferences;
 
@@ -40,6 +44,38 @@ public class App extends Application {
             Notifications.createNotificationChannels();
 
             new ConfigUpdateReceiver(ctx);
+
+            // Enable contacts sync by default for Google accounts
+            setupContactsSyncForGoogleAccounts(ctx);
+        }
+    }
+
+    private static final String GOOGLE_ACCOUNT_TYPE = "com.google";
+    private static final String CONTACTS_AUTHORITY = "com.google.android.gms.people";
+
+    private static void setupContactsSyncForGoogleAccounts(Context ctx) {
+        AccountManager accountManager = AccountManager.get(ctx);
+
+        // Enable sync for any existing Google accounts
+        enableContactsSyncForGoogleAccounts(accountManager);
+
+        // Listen for new accounts being added
+        accountManager.addOnAccountsUpdatedListener(
+            accounts -> enableContactsSyncForGoogleAccounts(accountManager),
+            null, // handler (null = main thread)
+            true  // updateImmediately
+        );
+    }
+
+    private static void enableContactsSyncForGoogleAccounts(AccountManager accountManager) {
+        Account[] googleAccounts = accountManager.getAccountsByType(GOOGLE_ACCOUNT_TYPE);
+        for (Account account : googleAccounts) {
+            // Only enable if not already configured (isSyncable == -1 means "unknown/not set")
+            int syncable = ContentResolver.getIsSyncable(account, CONTACTS_AUTHORITY);
+            if (syncable < 1) {
+                ContentResolver.setIsSyncable(account, CONTACTS_AUTHORITY, 1);
+                ContentResolver.setSyncAutomatically(account, CONTACTS_AUTHORITY, true);
+            }
         }
     }
 

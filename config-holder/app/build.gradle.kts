@@ -7,7 +7,7 @@ plugins {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
+        languageVersion.set(JavaLanguageVersion.of(21))
     }
 }
 
@@ -58,7 +58,7 @@ android {
 
         create("dev") {
             initWith(getByName("release"))
-            applicationIdSuffix = ".dev"
+            // Removed .dev suffix so package name matches what GmsCompatConfigParser expects on user builds
             signingConfig = signingConfigs.getByName("debug")
         }
     }

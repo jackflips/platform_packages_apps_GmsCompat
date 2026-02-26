@@ -3,6 +3,7 @@ package app.grapheneos.gmscompat
 import android.app.ApplicationErrorReport
 import android.app.Notification
 import android.app.PendingIntent
+import android.app.compat.gms.GmsCompat
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -460,8 +461,15 @@ object BinderGms2Gca : IGms2Gca.Stub() {
 
         val intent = Intent(Intent.ACTION_APP_ERROR)
         intent.putExtra(Intent.EXTRA_BUG_REPORT, aer)
-        val configVersion = ctx.packageManager.getPackageInfo(ConfigUpdateReceiver.CONFIG_HOLDER_PACKAGE,
-                PackageManager.PackageInfoFlags.of(0L)).longVersionCode
+        val configPkg = if (Const.IS_DEV_BUILD) ConfigUpdateReceiver.CONFIG_HOLDER_PACKAGE_DEV
+                else ConfigUpdateReceiver.CONFIG_HOLDER_PACKAGE
+        val configVersion = try {
+            ctx.packageManager.getPackageInfo(configPkg,
+                    PackageManager.PackageInfoFlags.of(0L)).longVersionCode
+        } catch (e: PackageManager.NameNotFoundException) {
+            ctx.packageManager.getPackageInfo(ConfigUpdateReceiver.CONFIG_HOLDER_PACKAGE,
+                    PackageManager.PackageInfoFlags.of(0L)).longVersionCode
+        }
         intent.putExtra(LogViewerApp.EXTRA_SHOW_REPORT_BUTTON, true)
         intent.putExtra(Intent.EXTRA_TEXT, "GmsCompatConfig version: $configVersion")
         intent.setPackage(LogViewerApp.getPackageName());
@@ -522,6 +530,11 @@ object BinderGms2Gca : IGms2Gca.Stub() {
     val missingPostNotifsNotifIds = ArrayMap<String, Int>()
 
     override fun showMissingPostNotifsPermissionNotification(callerPkg: String) {
+        // GmsCompat apps are allowed to post notifications (see PermissionHelper.hasPermission)
+        if (GmsCompat.canBeEnabledFor(callerPkg)) {
+            return
+        }
+
         val notifId = synchronized(missingPostNotifsNotifIds) {
             missingPostNotifsNotifIds.getOrPut(callerPkg) {
                 Notifications.generateUniqueNotificationId()

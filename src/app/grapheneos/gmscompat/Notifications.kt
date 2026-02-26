@@ -221,32 +221,9 @@ object Notifications {
                 intent).build()
     }
 
-    private var handledContactsSync = false
-
     fun handleContactsSync() {
-        if (handledContactsSync) {
-            return
-        }
-        handledContactsSync = true
-
-        val id = ID_CONTACTS_SYNC_PROMPT
-
-        val doNotShowAgainAction = doNotShowAgainAction(id)
-
-        if (doNotShowAgainAction == null) {
-            return
-        }
-
-        builder(CH_MISSING_OPTIONAL_PERMISSION).apply {
-            setSmallIcon(R.drawable.ic_configuration_required)
-            setContentTitle(R.string.missing_optional_permission)
-            setContentText(R.string.notif_contacts_sync_prompt)
-            setStyle(Notification.BigTextStyle())
-            setContentIntent(appSettingsPendingIntent(GmsInfo.PACKAGE_GMS_CORE, APP_INFO_ITEM_PERMISSIONS))
-            setAutoCancel(true)
-            addAction(doNotShowAgainAction)
-            show(id)
-        }
+        // Contacts permission is now auto-granted to GMS Core
+        // (see PermissionManagerServiceImpl.checkUidPermission)
     }
 }
 

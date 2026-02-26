@@ -59,6 +59,10 @@ ReceiverControlChannelFeatures__enable_user_accept_dialogs false
 # Google pushes amber_create_flags=true server-side, which would bypass our overrides.
 RcsProvisioning__amber_create_flags false
 RcsProvisioning__disable_rcs_for_device false
+# Run RCS engine in Messages process instead of Carrier Services JibeService.
+# CS.apk JibeService version compatibility check fails (Messages reports "Supported versions: []").
+# This flag bypasses that check entirely — Messages handles RCS provisioning directly.
+CslibSettings__migrate_jibe_service_from_cs_apk_to_bugle true
 RcsFlags__acs_url set-string http://rcs-acs-att-us.jibe.google.com
 RcsFlags__rcs_provisioning_enabled true
 RcsFlags__mcc_mnc set-string 310280
@@ -272,9 +276,10 @@ getUserSelectedOutgoingPhoneAccount null
 placeCall void
 
 [android.telephony.SubscriptionManager]
-# getActiveSubscriptionIdList, getPhoneNumber stubs removed:
-# with READ_PHONE_STATE and READ_PHONE_NUMBERS granted, the real APIs work.
-# These are needed for RCS provisioning (phone number verification).
+# getPhoneNumber stub needed: GMS Core's constellation.EventManager calls getPhoneNumber()
+# without READ_PHONE_NUMBERS permission, causing a crash that kills the UPI service connection.
+# Messages gets the phone number from TelephonyManager.getLine1Number() instead.
+getPhoneNumber nullString
 
 [android.telephony.TelephonyManager]
 # getDeviceId, getImei, getMeid, getSubscriberId, getLine1Number stubs removed:
